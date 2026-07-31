@@ -1,0 +1,14 @@
+﻿*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+.Xil/
+*.log
+*.jou
+*.str
+*.xpr.backup.*
+*.bak
+*.lock
+.DS_Store
+Thumbs.db
