@@ -13,9 +13,9 @@ top uut(.clk(clk), .reset(reset));
 initial begin
 clk = 0;
 reset=1;
-#5;
+#10;
 reset = 0;
-#400;
+#50;
 $finish;
 end
 

@@ -36,23 +36,23 @@ endmodule
 
 module Instruction_Memory (clk, reset, read_address, instruction_out);
 
-input clk,reset;
+input clk, reset;
 input [31:0] read_address;
-output reg [31:0] instruction_out;
-
+output [31:0] instruction_out;
 reg [31:0] I_Mem[63:0];
-// 64 memory locations each of 32 bit size
+assign instruction_out = I_Mem[read_address];
+
 integer k;
 
-always @(posedge clk or posedge reset)
-begin
-if(reset) begin
-    for(k=0; k<64; k=k+1) begin
-    I_Mem[k] <= 32'b00;
-    end
-end else
-    instruction_out <= I_Mem[read_address];
-    end
+initial begin
+    for(k=0; k<64; k=k+1) I_Mem[k] = 32'b0;
+    I_Mem[0]  = 32'b00000000010100000000000010010011;
+    I_Mem[4]  = 32'b00000000101000000000000100010011;
+    I_Mem[8]  = 32'b00000000001000001000000110110011;
+    I_Mem[12] = 32'b01000000000100011000001000110011;
+    I_Mem[16] = 32'b00000000000100011110001100110011;
+end
+
 endmodule
 
 // Register File - file of registers that holds values currently being used
@@ -100,6 +100,9 @@ always @(*) begin
     // Store type
     7'b1100011 : ImmExt = {{19{instruction[31]}}, instruction[31], instruction[30:25], instruction[11:8],1'b0};
     // Branch type
+    7'b0010011 : ImmExt = {{20{instruction[31]}},instruction[31:20]};
+    // Imm type
+    default    : ImmExt = 32'b0;
     endcase
 
 end    
@@ -121,7 +124,10 @@ always @(*) begin
     7'b0100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b100010_00;
     // Store type
     7'b1100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b000001_01;
-    // Immediate type
+    // Branch type
+    7'b0010011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b101000_10;
+    // I-type
+    default    : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b0;
     endcase
 end
 endmodule
@@ -167,6 +173,7 @@ always @(*) begin
     6'b10_0_000 : Control_out <= 4'b0110;
     6'b10_0_111 : Control_out <= 4'b0000;
     6'b10_0_110 : Control_out <= 4'b0001;
+    default     : Control_out = 4'b0010;
     endcase
 
 end
