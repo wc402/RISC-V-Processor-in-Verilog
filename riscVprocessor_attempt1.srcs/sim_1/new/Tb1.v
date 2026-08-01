@@ -1,0 +1,26 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Test bench for the RISC-V processor
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module Tb1;
+
+reg clk, reset;
+
+top uut(.clk(clk), .reset(reset));
+
+initial begin
+clk = 0;
+reset=1;
+#5;
+reset = 0;
+#400;
+$finish;
+end
+
+always begin
+    #5 clk = ~clk;
+    end
+
+endmodule
