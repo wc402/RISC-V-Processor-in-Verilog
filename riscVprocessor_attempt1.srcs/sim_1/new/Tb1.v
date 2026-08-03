@@ -15,7 +15,7 @@ clk = 0;
 reset=1;
 #10;
 reset = 0;
-#50;
+#500;
 $finish;
 end
 

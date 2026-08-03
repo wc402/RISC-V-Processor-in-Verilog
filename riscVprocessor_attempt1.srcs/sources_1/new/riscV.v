@@ -39,18 +39,22 @@ module Instruction_Memory (clk, reset, read_address, instruction_out);
 input clk, reset;
 input [31:0] read_address;
 output [31:0] instruction_out;
-reg [31:0] I_Mem[63:0];
+reg [31:0] I_Mem[255:0];
 assign instruction_out = I_Mem[read_address];
 
 integer k;
 
 initial begin
-    for(k=0; k<64; k=k+1) I_Mem[k] = 32'b0;
-    I_Mem[0]  = 32'b00000000010100000000000010010011;
-    I_Mem[4]  = 32'b00000000101000000000000100010011;
-    I_Mem[8]  = 32'b00000000001000001000000110110011;
-    I_Mem[12] = 32'b01000000000100011000001000110011;
-    I_Mem[16] = 32'b00000000000100011110001100110011;
+    for(k=0; k<256; k=k+1) I_Mem[k] = 32'b0;
+        I_Mem[0]  = 32'h00000093;  
+        I_Mem[4]  = 32'h00000113;  
+        I_Mem[8]  = 32'h00500193;  
+        I_Mem[12] = 32'h00108093;  
+        I_Mem[16] = 32'h00110133;  
+        I_Mem[20] = 32'h00308463;  
+        I_Mem[24] = 32'hfe000ae3;  
+        I_Mem[28] = 32'h00202023;  
+        I_Mem[32] = 32'hfe000ee3;  
 end
 
 endmodule
@@ -98,7 +102,7 @@ always @(*) begin
     // Load type = 20 copies of MSB and concatinates with immediate value from bits 31 to 20
     7'b0100011 : ImmExt = {{20{instruction[31]}}, instruction[31:25], instruction[11:7]};
     // Store type
-    7'b1100011 : ImmExt = {{19{instruction[31]}}, instruction[31], instruction[30:25], instruction[11:8],1'b0};
+    7'b1100011 : ImmExt = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8],1'b0};
     // Branch type
     7'b0010011 : ImmExt = {{20{instruction[31]}},instruction[31:20]};
     // Imm type
@@ -109,21 +113,24 @@ end
 endmodule
 
 // Control Unit gives outputs determining behaviour of different components of our processor
-module control_unit(instruction, branch, memread, memtoreg, ALUop, memwrite, ALUsrc, regwrite);
+module control_unit(instruction, branch, memread, memtoreg, ALUop, memwrite, ALUsrc, regwrite, Rtype);
 
 input [6:0] instruction;
 output reg branch, memread, memtoreg, memwrite, ALUsrc, regwrite;
 output reg [1:0] ALUop;
+output Rtype;
+
+assign Rtype = (instruction == 7'b0110011);   
 
 always @(*) begin
     case(instruction)
-    7'b0110011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b001000_10;
+    7'b0110011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b001000_10;
     // R-format (instructions involving operation performed on values in both rs1 and rs2) rather than Imm
-    7'b0000011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b111100_00;
+    7'b0000011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b111100_00;
     // Load type
-    7'b0100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b100010_00;
+    7'b0100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b100010_00;
     // Store type
-    7'b1100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} <= 8'b000001_01;
+    7'b1100011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b000001_01;
     // Branch type
     7'b0010011 : {ALUsrc, memtoreg, regwrite, memread, memwrite, branch, ALUop} = 8'b101000_10;
     // I-type
@@ -158,23 +165,27 @@ end
 endmodule
 
 // ALU control determines the function that the ALU will carry out depending on instruction
-module ALU_control (ALUop, fun7, fun3, Control_out);
+module ALU_control (ALUop, fun7, fun3, Control_out, Rtype);
 
-input fun7;
+input fun7, Rtype;
 input [2:0] fun3;
 input [1:0] ALUop;
 output reg [3:0] Control_out;
 
 always @(*) begin
-    case({ALUop, fun7, fun3})
-    6'b00_0_000 : Control_out <= 4'b0010;
-    6'b01_0_000 : Control_out <= 4'b0110;
-    6'b10_0_000 : Control_out <= 4'b0010;
-    6'b10_0_000 : Control_out <= 4'b0110;
-    6'b10_0_111 : Control_out <= 4'b0000;
-    6'b10_0_110 : Control_out <= 4'b0001;
-    default     : Control_out = 4'b0010;
-    endcase
+    case(ALUop)
+    2'b00 : Control_out = 4'b0010;                  
+    2'b01 : Control_out = 4'b0110;                     
+    2'b10 : begin
+        case(fun3)
+        3'b000 : Control_out = (Rtype && fun7) ? 4'b0110 : 4'b0010; 
+        3'b111 : Control_out = 4'b0000;                
+        3'b110 : Control_out = 4'b0001;                
+        default: Control_out = 4'b0010;
+        endcase
+    end
+    default : Control_out = 4'b0010;
+endcase
 
 end
 endmodule 
@@ -187,11 +198,11 @@ input [31:0] read_address, write_data;
 output [31:0] memdata_out;
 
 integer k;
-reg [31:0] D_memory[63:0];
+reg [31:0] D_memory[255:0];
 
 always @(posedge clk or posedge reset) begin
 if (reset) begin
-    for(k = 0; k<64; k=k+1) begin
+    for(k = 0; k<256; k=k+1) begin
         D_memory[k] <= 32'b00;
         end
     end
@@ -259,7 +270,7 @@ module top(clk,reset);
 input clk, reset;
 
 wire [31:0] PC_top, instruction_top, readdata1_top, readdata2_top, IMMext_top, mux1out_top, sum_top, nexttopc_out, PCin_top, address_top, memdata_top, writeback_top;
-wire regwrite_top, ALUsrc_top, branch_top, zero_top, sel2_top, memtoreg_top, memwrite_top, memread_top;
+wire regwrite_top, ALUsrc_top, branch_top, zero_top, sel2_top, memtoreg_top, memwrite_top, memread_top, Rtype_top;
 wire [1:0] ALUop_top;
 wire [3:0] ALUcontrol_top;
 
@@ -274,9 +285,9 @@ register_file REGfile(.clk(clk), .reset(reset), .rs1(instruction_top[19:15]), .r
 //Immediate generator
 ImmGen IMMgen(.Opcode(instruction_top[6:0]), .instruction(instruction_top), .ImmExt(IMMext_top));
 // Control Unit
-control_unit CONTROLunit(.instruction(instruction_top[6:0]), .branch(branch_top), .memread(memread_top), .memtoreg(memtoreg_top), .ALUop(ALUop_top), .memwrite(memwrite_top), .ALUsrc(ALUsrc_top), .regwrite(regwrite_top));
+control_unit CONTROLunit(.instruction(instruction_top[6:0]), .branch(branch_top), .memread(memread_top), .memtoreg(memtoreg_top), .ALUop(ALUop_top), .memwrite(memwrite_top), .ALUsrc(ALUsrc_top), .regwrite(regwrite_top), .Rtype(Rtype_top));
 // ALU control
-ALU_control ALUcontrol(.ALUop(ALUop_top), .fun7(instruction_top[30]), .fun3(instruction_top[14:12]), .Control_out(ALUcontrol_top));
+ALU_control ALUcontrol(.ALUop(ALUop_top), .fun7(instruction_top[30]), .fun3(instruction_top[14:12]), .Control_out(ALUcontrol_top), .Rtype(Rtype_top));
 //ALU
 ALU ALunit(.A(readdata1_top), .B(mux1out_top), .Control_in(ALUcontrol_top), .ALU_result(address_top), .zero(zero_top));
 //ALU mux1
