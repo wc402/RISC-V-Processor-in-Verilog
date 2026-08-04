@@ -6,6 +6,7 @@ This project implements a single cycle 32-bit RISC-V processor written in Verilo
 
 This project was built as a learning exercise and made taking inspiration from the following youtube video which describes how a RISC-V processor works.
 
+  
 [![Video title](https://img.youtube.com/vi/USFhmrBlFis/0.jpg)](https://www.youtube.com/watch?v=USFhmrBlFis)
 
 ### Features
