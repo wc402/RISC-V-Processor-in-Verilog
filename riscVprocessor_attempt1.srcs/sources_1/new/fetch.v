@@ -41,15 +41,22 @@ integer k;
 
 initial begin
     for(k=0; k<256; k=k+1) I_Mem[k] = 32'b0;
-        I_Mem[0]  = 32'h00000093;  
-        I_Mem[4]  = 32'h00000113;  
-        I_Mem[8]  = 32'h00500193;  
-        I_Mem[12] = 32'h00108093;  
-        I_Mem[16] = 32'h00110133;  
-        I_Mem[20] = 32'h00308463;  
-        I_Mem[24] = 32'hfe000ae3;  
-        I_Mem[28] = 32'h00202023;  
-        I_Mem[32] = 32'hfe000ee3;  
+    I_Mem[0]  = 32'h00500293;  // addi x5, x0, 5 
+    I_Mem[4]  = 32'h00000013;  // nop
+    I_Mem[8]  = 32'h00000013;  // nop
+    I_Mem[12] = 32'h00000013;  // nop
+    I_Mem[16] = 32'h00A00313;  // addi x6, x0, 10
+    I_Mem[20] = 32'h00000013;  // nop
+    I_Mem[24] = 32'h00000013;  // nop
+    I_Mem[28] = 32'h00000013;  // nop
+    I_Mem[32] = 32'h006283B3;  // add x7, x5, x6
+    I_Mem[36] = 32'h00000013;  // nop
+    I_Mem[40] = 32'h00000013;  // nop
+    I_Mem[44] = 32'h00000013;  // nop
+    I_Mem[48] = 32'h00702023;  // sw x7, 0(x0)
+    I_Mem[52] = 32'h00000013;  // nop (drain)
+    I_Mem[56] = 32'h00000013;  // nop
+    I_Mem[60] = 32'h00000013;  // nop
 end
 
 endmodule
