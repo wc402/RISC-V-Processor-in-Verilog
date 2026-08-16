@@ -41,22 +41,15 @@ integer k;
 
 initial begin
     for(k=0; k<256; k=k+1) I_Mem[k] = 32'b0;
-    I_Mem[0]  = 32'h00500293;  // addi x5, x0, 5 
-    I_Mem[4]  = 32'h00000013;  // nop
-    I_Mem[8]  = 32'h00000013;  // nop
-    I_Mem[12] = 32'h00000013;  // nop
-    I_Mem[16] = 32'h00A00313;  // addi x6, x0, 10
-    I_Mem[20] = 32'h00000013;  // nop
+    I_Mem[0]  = 32'h00500293;  // addi x5, x0, 5        -> x5 = 5
+    I_Mem[4]  = 32'h00A00313;  // addi x6, x0, 10        -> x6 = 10
+    I_Mem[8]  = 32'h006283B3;  // add  x7, x5, x6        -> x7 = 15   (needs EX/MEM forwarding: x6 just computed last cycle)
+    I_Mem[12] = 32'h007383B3;  // add  x7, x7, x7        -> x7 = 30   (needs EX/MEM forwarding: x7 computed the cycle before)
+    I_Mem[16] = 32'h0073C433;  // xor  x8, x7, x7        -> x8 = 0    (needs MEM/WB forwarding: x7 now 2 cycles back)
+    I_Mem[20] = 32'h00000013;  // nop (drain)
     I_Mem[24] = 32'h00000013;  // nop
     I_Mem[28] = 32'h00000013;  // nop
-    I_Mem[32] = 32'h006283B3;  // add x7, x5, x6
-    I_Mem[36] = 32'h00000013;  // nop
-    I_Mem[40] = 32'h00000013;  // nop
-    I_Mem[44] = 32'h00000013;  // nop
-    I_Mem[48] = 32'h00702023;  // sw x7, 0(x0)
-    I_Mem[52] = 32'h00000013;  // nop (drain)
-    I_Mem[56] = 32'h00000013;  // nop
-    I_Mem[60] = 32'h00000013;  // nop
+    I_Mem[32] = 32'h00000013;  // nop
 end
 
 endmodule
