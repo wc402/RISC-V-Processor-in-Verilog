@@ -45,3 +45,26 @@ always @(*) begin
 end
     
 endmodule
+
+module load_hazard_detect(memread_IDEX, rd_IDEX, rs1_IFID, rs2_IFID, stall);
+
+input memread_IDEX;
+input [4:0] rd_IDEX, rs1_IFID, rs2_IFID;
+output reg stall;
+
+always @(*) begin
+if (memread_IDEX && ((rd_IDEX == rs1_IFID) || (rd_IDEX == rs2_IFID)) && (rd_IDEX != 5'b0)) 
+    stall = 1'b1;
+else 
+    stall = 1'b0;
+end
+endmodule
+
+module bubble_mux(stall, controlsig_in, controlsig_out);
+
+input stall;
+input [8:0] controlsig_in;
+output [8:0] controlsig_out;
+
+assign controlsig_out = stall ? 9'b0 : controlsig_in;
+endmodule

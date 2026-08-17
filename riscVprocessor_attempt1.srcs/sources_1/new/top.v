@@ -23,18 +23,24 @@ wire memtoreg_top_MEMWB, regwrite_top_MEMWB;
 // Forwarding wires
 wire [1:0] ForwardA, ForwardB;
 wire [31:0] ALU_inputA, mux1in_B;
-
+// Load hazard detection wires
+wire stall;
+wire [8:0] controlsig_in, controlsig_out;
+assign controlsig_in = {ALUsrc_top, branch_top, memread_top, memtoreg_top, memwrite_top, regwrite_top, Rtype_top, ALUop_top};
+wire ALUsrc_muxed, branch_muxed, memread_muxed, memtoreg_muxed, memwrite_muxed, regwrite_muxed, Rtype_muxed;
+wire [1:0] ALUop_muxed;
+assign {ALUsrc_muxed, branch_muxed, memread_muxed, memtoreg_muxed, memwrite_muxed, regwrite_muxed, Rtype_muxed, ALUop_muxed} = controlsig_out;
 
 /////// IF
 // Program Counter
-program_counter PC(.clk(clk), .reset(reset), .PC_in(PCin_top), .PC_out(PC_top));
+program_counter PC(.clk(clk), .reset(reset), .stall(stall), .PC_in(PCin_top), .PC_out(PC_top));
 // PC adder
 PCplus4 PCadd(.fromPC(PC_top), .NextoPC(nexttopc_out));
 // Instruction memory
 Instruction_Memory Instructmem(.clk(clk), .reset(reset), .read_address(PC_top), .instruction_out(instruction_top));
 
 // IF/ID pipeline register
-IFID_reg IFIDreg(.clk(clk), .reset(reset), .PC_in(PC_top), .instruction_in(instruction_top), .PC_out(PC_top_IFID), .instruction_out(instruction_top_IFID));
+IFID_reg IFIDreg(.clk(clk), .reset(reset), .stall(stall), .PC_in(PC_top), .instruction_in(instruction_top), .PC_out(PC_top_IFID), .instruction_out(instruction_top_IFID));
 
 ///////// ID
 // Register File
@@ -44,9 +50,13 @@ ImmGen IMMgen(.Opcode(instruction_top_IFID[6:0]), .instruction(instruction_top_I
 // Control Unit
 control_unit CONTROLunit(.instruction(instruction_top_IFID[6:0]), .branch(branch_top), .memread(memread_top), .memtoreg(memtoreg_top), .ALUop(ALUop_top), .memwrite(memwrite_top), .ALUsrc(ALUsrc_top), .regwrite(regwrite_top), .Rtype(Rtype_top));
 
+// Load hazard detection
+load_hazard_detect LDHAZARDdetect(.memread_IDEX(memread_top_IDEX), .rd_IDEX(instruction_top_IDEX[11:7]), .rs1_IFID(instruction_top_IFID[19:15]), .rs2_IFID(instruction_top_IFID[24:20]), .stall(stall));
+bubble_mux BBLmux(.stall(stall), .controlsig_in(controlsig_in), .controlsig_out(controlsig_out));
+
 // ID/EX register
 IDEX_reg IDEXreg(.clk(clk), .reset(reset), 
-    .PC_in(PC_top_IFID), .readdata1_in(readdata1_top), .readdata2_in(readdata2_top), .imm_in(IMMext_top), .instruction_in(instruction_top_IFID), .ALUsrc_in(ALUsrc_top), .branch_in(branch_top), .memread_in(memread_top), .memtoreg_in(memtoreg_top), .memwrite_in(memwrite_top), .regwrite_in(regwrite_top), .ALUop_in(ALUop_top), .Rtype_in(Rtype_top),
+    .PC_in(PC_top_IFID), .readdata1_in(readdata1_top), .readdata2_in(readdata2_top), .imm_in(IMMext_top), .instruction_in(instruction_top_IFID), .ALUsrc_in(ALUsrc_muxed), .branch_in(branch_muxed), .memread_in(memread_muxed), .memtoreg_in(memtoreg_muxed), .memwrite_in(memwrite_muxed), .regwrite_in(regwrite_muxed), .ALUop_in(ALUop_muxed), .Rtype_in(Rtype_muxed),
     .PC_out(PC_top_IDEX), .readdata1_out(readdata1_top_IDEX), .readdata2_out(readdata2_top_IDEX), 
     .imm_out(IMMext_top_IDEX), .instruction_out(instruction_top_IDEX),
     .ALUsrc_out(ALUsrc_top_IDEX), .branch_out(branch_top_IDEX), .memread_out(memread_top_IDEX), .memtoreg_out(memtoreg_top_IDEX),
