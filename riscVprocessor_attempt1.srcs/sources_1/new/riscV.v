@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+/* `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // This is the code containing each module that makes up the RISC-V processor.
 // Each module has a description outlining its purpose.
@@ -304,8 +304,7 @@ data_memory DATAmem(.clk(clk), .reset(reset), .memwrite(memwrite_top), .memread(
 mux3 MEMmux(.sel3(memtoreg_top), .A3(address_top), .B3(memdata_top), .mux3_out(writeback_top));
 
 
-endmodule
-
+endmodule */
 
 
 
